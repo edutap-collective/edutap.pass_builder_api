@@ -3,6 +3,7 @@ import pytest
 
 from edutap.pass_builder_api.client import PassBuilderClient
 from edutap.pass_builder_api.exceptions import PassBuilderAuthError
+from edutap.pass_builder_api.settings import PassBuilderSettings
 
 
 def _client(handler, token="tok"):  # noqa: S107
@@ -55,3 +56,24 @@ async def test_error_response_raises_mapped_exception():
     async with _client(handler, token=None) as client:
         with pytest.raises(PassBuilderAuthError):
             await client.healthz()
+
+
+@pytest.mark.anyio
+async def test_falls_back_to_settings_token():
+    seen = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen["auth"] = request.headers.get("authorization")
+        return httpx.Response(200, json={"status": "ok"})
+
+    settings = PassBuilderSettings(
+        _env_file=None,
+        base_url="http://test",
+        token="from-settings",  # noqa: S106
+    )
+    async with PassBuilderClient(
+        settings=settings,
+        transport=httpx.MockTransport(handler),
+    ) as client:
+        await client.healthz()
+    assert seen["auth"] == "Bearer from-settings"

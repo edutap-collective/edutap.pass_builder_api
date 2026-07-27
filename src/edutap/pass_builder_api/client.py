@@ -18,10 +18,12 @@ class PassBuilderClient:
         base_url: str | None = None,
         token: str | None = None,
         timeout: float | None = None,
-        transport: httpx.BaseTransport | None = None,
+        transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
         settings = settings or PassBuilderSettings()
-        resolved_base = str(base_url or settings.base_url).rstrip("/")
+        resolved_base = str(
+            base_url if base_url is not None else settings.base_url
+        ).rstrip("/")
         resolved_token = token
         if resolved_token is None and settings.token is not None:
             resolved_token = settings.token.get_secret_value()
@@ -30,7 +32,7 @@ class PassBuilderClient:
             headers["Authorization"] = f"Bearer {resolved_token}"
         self._client = httpx.AsyncClient(
             base_url=resolved_base,
-            timeout=timeout or settings.timeout,
+            timeout=timeout if timeout is not None else settings.timeout,
             headers=headers,
             transport=transport,
         )
