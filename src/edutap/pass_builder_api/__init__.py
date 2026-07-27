@@ -2,9 +2,39 @@
 
 from importlib.metadata import PackageNotFoundError, version
 
+from .client import PassBuilderClient
+from .exceptions import (
+    PassBuilderAuthError,
+    PassBuilderConflictError,
+    PassBuilderError,
+    PassBuilderForbiddenError,
+    PassBuilderNotFoundError,
+    PassBuilderServerError,
+    PassBuilderValidationError,
+    ProblemDetail,
+)
+from .models import ApplePassResult, GooglePassResponse, PreviewResponse, WalletType
+from .settings import PassBuilderSettings
+
 try:
     __version__ = version("edutap.pass_builder_api")
-except PackageNotFoundError:  # pragma: no cover - during local dev before install
+except PackageNotFoundError:  # pragma: no cover
     __version__ = "0.0.0.dev0"
 
-__all__ = ["__version__"]
+__all__ = [
+    "__version__",
+    "PassBuilderClient",
+    "PassBuilderSettings",
+    "WalletType",
+    "ApplePassResult",
+    "GooglePassResponse",
+    "PreviewResponse",
+    "ProblemDetail",
+    "PassBuilderError",
+    "PassBuilderAuthError",
+    "PassBuilderForbiddenError",
+    "PassBuilderNotFoundError",
+    "PassBuilderConflictError",
+    "PassBuilderValidationError",
+    "PassBuilderServerError",
+]
