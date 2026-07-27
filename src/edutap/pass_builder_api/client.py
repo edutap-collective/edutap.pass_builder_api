@@ -5,7 +5,19 @@ from typing import Any
 import httpx
 
 from .exceptions import raise_for_problem
+from .models import (
+    ApplePassResult,
+    CreatePassRequest,
+    GooglePassResponse,
+    PreviewRequest,
+    PreviewResponse,
+    SaveLinkRequest,
+    SaveLinkResponse,
+    UpdatePassRequest,
+    WalletType,
+)
 from .settings import PassBuilderSettings
+from .validation import validate_pass_id, validate_person_uid
 
 
 class PassBuilderClient:
@@ -76,3 +88,171 @@ class PassBuilderClient:
         """
         response = await self._request("GET", "/readyz", raise_on_error=False)
         return response.json()
+
+    @staticmethod
+    def _int_or_none(value: str | None) -> int | None:
+        return int(value) if value is not None else None
+
+    def _parse_pass_response(
+        self, response: httpx.Response
+    ) -> ApplePassResult | GooglePassResponse:
+        """Parse a create/update-pass response by its actual content type.
+
+        The response shape is determined by what the server sent back
+        (an Apple pkpass body vs. a Google JSON body), not by which
+        wallet type the caller requested — this lets typed wrappers such
+        as ``create_google_pass`` detect a request/response mismatch and
+        raise instead of silently mis-parsing the body.
+        """
+        content_type = response.headers.get("content-type", "")
+        if "vnd.apple.pkpass" in content_type:
+            return ApplePassResult(
+                content=response.content,
+                template_version=self._int_or_none(
+                    response.headers.get("X-Template-Version")
+                ),
+                variant=response.headers.get("X-Variant"),
+                credential_set=response.headers.get("X-Credential-Set"),
+            )
+        return GooglePassResponse.model_validate_json(response.content)
+
+    async def create_pass(
+        self,
+        *,
+        pass_id: str,
+        template: str,
+        wallet_type: WalletType,
+        person_uid: str,
+        variant: str | None = None,
+        template_version: int | None = None,
+        request_id: str | None = None,
+    ) -> ApplePassResult | GooglePassResponse:
+        """Create a pass, returning an Apple result or a Google response."""
+        validate_pass_id(pass_id)
+        validate_person_uid(person_uid)
+        payload = CreatePassRequest(
+            pass_id=pass_id,
+            template=template,
+            wallet_type=wallet_type,
+            person_uid=person_uid,
+            variant=variant,
+            template_version=template_version,
+        ).model_dump(mode="json", exclude_none=True)
+        headers = {"x-request-id": request_id} if request_id else None
+        response = await self._request(
+            "POST", "/api/v1/passes", json=payload, headers=headers
+        )
+        return self._parse_pass_response(response)
+
+    async def create_apple_pass(
+        self,
+        *,
+        pass_id: str,
+        template: str,
+        person_uid: str,
+        variant: str | None = None,
+        template_version: int | None = None,
+        request_id: str | None = None,
+    ) -> ApplePassResult:
+        """Create an Apple pass and return the typed Apple result."""
+        result = await self.create_pass(
+            pass_id=pass_id,
+            template=template,
+            wallet_type=WalletType.APPLE,
+            person_uid=person_uid,
+            variant=variant,
+            template_version=template_version,
+            request_id=request_id,
+        )
+        if not isinstance(result, ApplePassResult):  # pragma: no cover - defensive
+            raise TypeError("expected an Apple pass result")
+        return result
+
+    async def create_google_pass(
+        self,
+        *,
+        pass_id: str,
+        template: str,
+        person_uid: str,
+        variant: str | None = None,
+        template_version: int | None = None,
+        request_id: str | None = None,
+    ) -> GooglePassResponse:
+        """Create a Google pass and return the typed Google response."""
+        result = await self.create_pass(
+            pass_id=pass_id,
+            template=template,
+            wallet_type=WalletType.GOOGLE,
+            person_uid=person_uid,
+            variant=variant,
+            template_version=template_version,
+            request_id=request_id,
+        )
+        if not isinstance(result, GooglePassResponse):
+            raise TypeError("expected a Google pass response")
+        return result
+
+    async def update_pass(
+        self,
+        pass_id: str,
+        *,
+        template: str,
+        wallet_type: WalletType,
+        person_uid: str,
+        variant: str | None = None,
+        template_version: int | None = None,
+        request_id: str | None = None,
+    ) -> ApplePassResult | GooglePassResponse:
+        """Update an existing pass, returning an Apple result or Google response."""
+        validate_pass_id(pass_id)
+        validate_person_uid(person_uid)
+        payload = UpdatePassRequest(
+            template=template,
+            wallet_type=wallet_type,
+            person_uid=person_uid,
+            variant=variant,
+            template_version=template_version,
+        ).model_dump(mode="json", exclude_none=True)
+        headers = {"x-request-id": request_id} if request_id else None
+        response = await self._request(
+            "PUT", f"/api/v1/passes/{pass_id}", json=payload, headers=headers
+        )
+        return self._parse_pass_response(response)
+
+    async def save_link(
+        self,
+        pass_id: str,
+        *,
+        template: str,
+        variant: str | None = None,
+        template_version: int | None = None,
+    ) -> str:
+        """Request a save-to-wallet link (signed JWT) for an existing pass."""
+        validate_pass_id(pass_id)
+        payload = SaveLinkRequest(
+            template=template, variant=variant, template_version=template_version
+        ).model_dump(mode="json", exclude_none=True)
+        response = await self._request(
+            "POST", f"/api/v1/passes/{pass_id}/save-link", json=payload
+        )
+        return SaveLinkResponse.model_validate_json(response.content).save_link
+
+    async def preview(
+        self,
+        *,
+        template: str,
+        wallet_type: WalletType,
+        variant: str | None = None,
+        template_version: int | None = None,
+        sample_data: dict[str, Any] | None = None,
+    ) -> PreviewResponse:
+        """Render a preview of a pass without persisting it."""
+        payload = PreviewRequest(
+            template=template,
+            wallet_type=wallet_type,
+            variant=variant,
+            template_version=template_version,
+            sample_data=sample_data,
+        ).model_dump(mode="json", exclude_none=True)
+        response = await self._request("POST", "/api/v1/passes/preview", json=payload)
+        return PreviewResponse.model_validate_json(response.content)
