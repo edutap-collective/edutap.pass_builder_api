@@ -1,0 +1,53 @@
+[project]
+name = "edutap.pass_builder_api"
+version = "0.1.0"
+description = "Pythonic async client for the edutap.pass_builder REST service."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "EUPL 1.2" }
+authors = [{ name = "Alexander Loechel", email = "Alexander.Loechel@lmu.de" }]
+keywords = ["edutap", "wallet", "pass", "client"]
+dependencies = [
+    "httpx",
+    "pydantic>=2",
+    "pydantic-settings",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "anyio",
+    "ruff",
+    "ty",
+    "pdbp",
+]
+
+[project.urls]
+Source = "https://github.com/edutap-collective/edutap.pass_builder_api"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["edutap*"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+markers = ["drift: spec-drift checks against the vendored server OpenAPI snapshot"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "D", "S", "B", "UP"]
+ignore = ["D203", "D213"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "D"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
