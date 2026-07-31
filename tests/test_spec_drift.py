@@ -3,6 +3,8 @@ from pathlib import Path
 
 import pytest
 
+from edutap.pass_builder_api.client import API_PREFIX
+
 SPEC = Path(__file__).parent / "data" / "openapi.json"
 
 
@@ -13,10 +15,10 @@ def test_render_paths_present_in_vendored_spec():
     spec = json.loads(SPEC.read_text())
     paths = spec.get("paths", {})
     for path in (
-        "/api/v1/passes",
-        "/api/v1/passes/{pass_id}",
-        "/api/v1/passes/{pass_id}/save-link",
-        "/api/v1/passes/preview",
+        f"{API_PREFIX}/passes",
+        f"{API_PREFIX}/passes/{{pass_id}}",
+        f"{API_PREFIX}/passes/{{pass_id}}/save-link",
+        f"{API_PREFIX}/passes/preview",
     ):
         assert path in paths, f"missing server path {path}"
 

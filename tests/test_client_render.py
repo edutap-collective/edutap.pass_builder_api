@@ -1,7 +1,7 @@
 import httpx
 import pytest
 
-from edutap.pass_builder_api.client import PassBuilderClient
+from edutap.pass_builder_api.client import API_PREFIX, PassBuilderClient
 from edutap.pass_builder_api.models import (
     ApplePassResult,
     GooglePassResponse,
@@ -20,7 +20,7 @@ def _client(handler):
 @pytest.mark.anyio
 async def test_create_google_pass_returns_model():
     def handler(request: httpx.Request) -> httpx.Response:
-        assert request.url.path == "/api/v1/passes"
+        assert request.url.path == f"{API_PREFIX}/passes"
         assert request.headers.get("x-request-id") == "req-1"
         return httpx.Response(
             201,
@@ -75,7 +75,7 @@ async def test_create_apple_pass_returns_bytes_and_headers():
 @pytest.mark.anyio
 async def test_save_link_returns_jwt_string():
     def handler(request: httpx.Request) -> httpx.Response:
-        assert request.url.path == "/api/v1/passes/p-1/save-link"
+        assert request.url.path == f"{API_PREFIX}/passes/p-1/save-link"
         return httpx.Response(200, json={"save_link": "eyJhbGciOi.jwt.sig"})
 
     async with _client(handler) as client:

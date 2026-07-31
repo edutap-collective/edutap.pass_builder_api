@@ -2,7 +2,7 @@
 
 from importlib.metadata import PackageNotFoundError, version
 
-from .client import PassBuilderClient
+from .client import API_PREFIX, PassBuilderClient
 from .exceptions import (
     PassBuilderAuthError,
     PassBuilderConflictError,
@@ -23,6 +23,7 @@ except PackageNotFoundError:  # pragma: no cover
 
 __all__ = [
     "__version__",
+    "API_PREFIX",
     "PassBuilderClient",
     "PassBuilderSettings",
     "WalletType",

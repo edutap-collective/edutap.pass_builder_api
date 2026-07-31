@@ -19,6 +19,13 @@ from .models import (
 from .settings import PassBuilderSettings
 from .validation import validate_pass_id, validate_person_uid
 
+API_PREFIX = "/builder/v1"
+"""The server's business path, mirroring `edutap.pass_builder.app.API_PREFIX`.
+
+The mount point in front of it (`/internal-api/wallet` by default) is a
+deployment concern and belongs in `base_url`, not here.
+"""
+
 
 class PassBuilderClient:
     """Thin async transport over the pass_builder REST API."""
@@ -140,7 +147,7 @@ class PassBuilderClient:
         ).model_dump(mode="json", exclude_none=True)
         headers = {"x-request-id": request_id} if request_id else None
         response = await self._request(
-            "POST", "/api/v1/passes", json=payload, headers=headers
+            "POST", f"{API_PREFIX}/passes", json=payload, headers=headers
         )
         return self._parse_pass_response(response)
 
@@ -215,7 +222,7 @@ class PassBuilderClient:
         ).model_dump(mode="json", exclude_none=True)
         headers = {"x-request-id": request_id} if request_id else None
         response = await self._request(
-            "PUT", f"/api/v1/passes/{pass_id}", json=payload, headers=headers
+            "PUT", f"{API_PREFIX}/passes/{pass_id}", json=payload, headers=headers
         )
         return self._parse_pass_response(response)
 
@@ -233,7 +240,7 @@ class PassBuilderClient:
             template=template, variant=variant, template_version=template_version
         ).model_dump(mode="json", exclude_none=True)
         response = await self._request(
-            "POST", f"/api/v1/passes/{pass_id}/save-link", json=payload
+            "POST", f"{API_PREFIX}/passes/{pass_id}/save-link", json=payload
         )
         return SaveLinkResponse.model_validate_json(response.content).save_link
 
@@ -254,5 +261,7 @@ class PassBuilderClient:
             template_version=template_version,
             sample_data=sample_data,
         ).model_dump(mode="json", exclude_none=True)
-        response = await self._request("POST", "/api/v1/passes/preview", json=payload)
+        response = await self._request(
+            "POST", f"{API_PREFIX}/passes/preview", json=payload
+        )
         return PreviewResponse.model_validate_json(response.content)
