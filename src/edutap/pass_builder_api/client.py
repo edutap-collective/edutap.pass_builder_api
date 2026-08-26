@@ -8,6 +8,8 @@ from .exceptions import raise_for_problem
 from .models import (
     ApplePassResult,
     CreatePassRequest,
+    DeactivatePassRequest,
+    DeactivatePassResponse,
     GooglePassResponse,
     PreviewRequest,
     PreviewResponse,
@@ -243,6 +245,42 @@ class PassBuilderClient:
             "POST", f"{API_PREFIX}/passes/{pass_id}/save-link", json=payload
         )
         return SaveLinkResponse.model_validate_json(response.content).save_link
+
+    async def deactivate_pass(
+        self,
+        pass_id: str,
+        *,
+        template: str,
+        wallet_type: WalletType = WalletType.GOOGLE,
+        variant: str | None = None,
+        template_version: int | None = None,
+        request_id: str | None = None,
+    ) -> DeactivatePassResponse:
+        """Withdraw an issued pass. Google only -- Apple answers `501`.
+
+        `POST` rather than `DELETE`, because nothing is deleted: the builder
+        keeps no register of issued passes. What happens is a state change on
+        the Google object, `state -> EXPIRED`.
+
+        Idempotent -- withdrawing an already withdrawn pass answers `200`
+        again, so a caller that did not see the first answer can simply repeat
+        the call.
+        """
+        validate_pass_id(pass_id)
+        payload = DeactivatePassRequest(
+            template=template,
+            wallet_type=wallet_type,
+            variant=variant,
+            template_version=template_version,
+        ).model_dump(mode="json", exclude_none=True)
+        headers = {"x-request-id": request_id} if request_id else None
+        response = await self._request(
+            "POST",
+            f"{API_PREFIX}/passes/{pass_id}/deactivate",
+            json=payload,
+            headers=headers,
+        )
+        return DeactivatePassResponse.model_validate_json(response.content)
 
     async def preview(
         self,

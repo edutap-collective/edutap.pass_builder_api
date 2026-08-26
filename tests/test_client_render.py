@@ -1,7 +1,10 @@
+import json
+
 import httpx
 import pytest
 
 from edutap.pass_builder_api.client import API_PREFIX, PassBuilderClient
+from edutap.pass_builder_api.exceptions import PassBuilderError
 from edutap.pass_builder_api.models import (
     ApplePassResult,
     GooglePassResponse,
@@ -115,3 +118,104 @@ async def test_create_google_pass_wrapper_raises_on_non_google_response():
                 template="t",
                 person_uid="u",
             )
+
+
+@pytest.mark.anyio
+async def test_deactivate_pass_posts_and_returns_the_new_state():
+    """`POST`, not `DELETE` -- the builder deletes nothing, it expires an object."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.method == "POST"
+        assert request.url.path == f"{API_PREFIX}/passes/p-1/deactivate"
+        return httpx.Response(
+            200,
+            json={
+                "pass_id": "p-1",
+                "object_id": "iss.p-1.object",
+                "state": "EXPIRED",
+            },
+        )
+
+    async with _client(handler) as client:
+        result = await client.deactivate_pass("p-1", template="student-id")
+
+    assert result.object_id == "iss.p-1.object"
+    assert result.state == "EXPIRED"
+
+
+@pytest.mark.anyio
+async def test_deactivate_pass_sends_no_person_uid():
+    """Withdrawing re-renders nothing, so no person data may travel with it.
+
+    Asserted on the wire rather than on the model: a field added to the request
+    model later would reach the server whether or not anyone meant it to.
+    """
+    seen: dict[str, object] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.update(json.loads(request.content))
+        return httpx.Response(
+            200,
+            json={"pass_id": "p-1", "object_id": "iss.p-1", "state": "EXPIRED"},
+        )
+
+    async with _client(handler) as client:
+        await client.deactivate_pass("p-1", template="student-id", variant="v2")
+
+    assert "person_uid" not in seen
+    assert seen == {"template": "student-id", "wallet_type": "google", "variant": "v2"}
+
+
+@pytest.mark.anyio
+async def test_deactivate_pass_defaults_to_google():
+    """The only wallet type the server can serve, so the caller need not say it."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert json.loads(request.content)["wallet_type"] == "google"
+        return httpx.Response(
+            200,
+            json={"pass_id": "p-1", "object_id": "iss.p-1", "state": "EXPIRED"},
+        )
+
+    async with _client(handler) as client:
+        await client.deactivate_pass("p-1", template="student-id")
+
+
+@pytest.mark.anyio
+async def test_deactivate_pass_surfaces_the_501_as_an_error():
+    """An Apple pass cannot be withdrawn here, and the caller has to notice.
+
+    The server answers a problem document; the client turns it into an
+    exception rather than a response object nobody inspects.
+    """
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            501,
+            json={
+                "type": "urn:edutap:pass-builder:wallet_type_not_supported",
+                "title": "Withdrawing is only implemented for Google Wallet passes",
+                "status": 501,
+            },
+            headers={"content-type": "application/problem+json"},
+        )
+
+    async with _client(handler) as client:
+        with pytest.raises(PassBuilderError) as caught:
+            await client.deactivate_pass(
+                "p-1", template="student-id", wallet_type=WalletType.APPLE
+            )
+
+    assert caught.value.problem.status == 501
+
+
+@pytest.mark.anyio
+async def test_deactivate_pass_rejects_a_malformed_pass_id():
+    """Validated before the request, like every other pass-scoped call."""
+
+    def handler(request: httpx.Request) -> httpx.Response:  # pragma: no cover
+        raise AssertionError("no request should be sent")
+
+    async with _client(handler) as client:
+        with pytest.raises(ValueError):
+            await client.deactivate_pass("", template="student-id")
