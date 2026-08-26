@@ -18,6 +18,7 @@ def test_render_paths_present_in_vendored_spec():
         f"{API_PREFIX}/passes",
         f"{API_PREFIX}/passes/{{pass_id}}",
         f"{API_PREFIX}/passes/{{pass_id}}/save-link",
+        f"{API_PREFIX}/passes/{{pass_id}}/deactivate",
         f"{API_PREFIX}/passes/preview",
     ):
         assert path in paths, f"missing server path {path}"

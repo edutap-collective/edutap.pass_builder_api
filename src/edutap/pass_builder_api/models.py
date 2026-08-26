@@ -43,6 +43,33 @@ class SaveLinkRequest(BaseModel):
     template_version: int | None = None
 
 
+class DeactivatePassRequest(BaseModel):
+    """Request to withdraw an issued pass.
+
+    No `person_uid`: withdrawing re-renders nothing, so the service reads no
+    person data. `template` and `variant` are still needed -- they are what
+    resolves the credential set and the Google class the object belongs to.
+
+    `wallet_type` is part of the body although only `GOOGLE` can be served. A
+    caller holding an Apple pass has to be told so rather than answered with a
+    guess; the service replies `501`, which arrives here as a
+    `PassBuilderError`.
+    """
+
+    template: str
+    wallet_type: WalletType
+    variant: str | None = None
+    template_version: int | None = None
+
+
+class DeactivatePassResponse(BaseModel):
+    """The withdrawn Google Wallet object and the state it now carries."""
+
+    pass_id: str
+    object_id: str
+    state: str
+
+
 class PreviewRequest(BaseModel):
     """Request to preview a pass rendering."""
 

@@ -13,7 +13,13 @@ from .exceptions import (
     PassBuilderValidationError,
     ProblemDetail,
 )
-from .models import ApplePassResult, GooglePassResponse, PreviewResponse, WalletType
+from .models import (
+    ApplePassResult,
+    DeactivatePassResponse,
+    GooglePassResponse,
+    PreviewResponse,
+    WalletType,
+)
 from .settings import PassBuilderSettings
 
 try:
@@ -28,6 +34,7 @@ __all__ = [
     "PassBuilderSettings",
     "WalletType",
     "ApplePassResult",
+    "DeactivatePassResponse",
     "GooglePassResponse",
     "PreviewResponse",
     "ProblemDetail",
