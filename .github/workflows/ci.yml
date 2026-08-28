@@ -18,8 +18,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Mirrors requires-python in pyproject.toml.
-        python-version: ["3.12", "3.13", "3.14"]
+        # Mirrors requires-python in pyproject.toml, and has to: `uv sync` refuses
+        # an interpreter the project excludes, so a stale entry here fails the job
+        # before a single test runs.
+        #
+        # 3.12 IS GONE because `edutap.data_models` requires 3.13. Not a preference:
+        # 3.12 is supported until 2028, but this package cannot be installed on it.
+        python-version: ["3.13", "3.14"]
     env:
       # uv reads this, so no step needs a version-specific flag.
       UV_PYTHON: ${{ matrix.python-version }}
