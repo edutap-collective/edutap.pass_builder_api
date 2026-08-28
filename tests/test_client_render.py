@@ -163,7 +163,11 @@ async def test_deactivate_pass_sends_no_person_uid():
         await client.deactivate_pass("p-1", template="student-id", variant="v2")
 
     assert "person_uid" not in seen
-    assert seen == {"template": "student-id", "wallet_type": "GOOGLE_ST", "variant": "v2"}
+    assert seen == {
+        "template": "student-id",
+        "wallet_type": "GOOGLE_ST",
+        "variant": "v2",
+    }
 
 
 @pytest.mark.anyio
