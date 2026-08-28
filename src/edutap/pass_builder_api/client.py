@@ -167,7 +167,7 @@ class PassBuilderClient:
         result = await self.create_pass(
             pass_id=pass_id,
             template=template,
-            wallet_type=WalletType.APPLE,
+            wallet_type=WalletType.APPLE_VAS,
             person_uid=person_uid,
             variant=variant,
             template_version=template_version,
@@ -191,7 +191,7 @@ class PassBuilderClient:
         result = await self.create_pass(
             pass_id=pass_id,
             template=template,
-            wallet_type=WalletType.GOOGLE,
+            wallet_type=WalletType.GOOGLE_ST,
             person_uid=person_uid,
             variant=variant,
             template_version=template_version,
@@ -251,7 +251,7 @@ class PassBuilderClient:
         pass_id: str,
         *,
         template: str,
-        wallet_type: WalletType = WalletType.GOOGLE,
+        wallet_type: WalletType = WalletType.GOOGLE_ST,
         variant: str | None = None,
         template_version: int | None = None,
         request_id: str | None = None,

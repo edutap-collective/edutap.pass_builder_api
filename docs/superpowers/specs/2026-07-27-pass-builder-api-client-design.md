@@ -142,27 +142,45 @@ class PassBuilderClient:
 
     # render scope
     async def create_pass(
-        self, *, pass_id: str, template: str, wallet_type: WalletType,
-        person_uid: str, variant: str | None = None,
+        self,
+        *,
+        pass_id: str,
+        template: str,
+        wallet_type: WalletType,
+        person_uid: str,
+        variant: str | None = None,
         template_version: int | None = None,
         request_id: str | None = None,
     ) -> ApplePassResult | GooglePassResponse: ...
 
     async def update_pass(
-        self, pass_id: str, *, template: str, wallet_type: WalletType,
-        person_uid: str, variant: str | None = None,
+        self,
+        pass_id: str,
+        *,
+        template: str,
+        wallet_type: WalletType,
+        person_uid: str,
+        variant: str | None = None,
         template_version: int | None = None,
         request_id: str | None = None,
     ) -> ApplePassResult | GooglePassResponse: ...
 
     async def save_link(
-        self, pass_id: str, *, template: str, variant: str | None = None,
+        self,
+        pass_id: str,
+        *,
+        template: str,
+        variant: str | None = None,
         template_version: int | None = None,
     ) -> str: ...
 
     async def preview(
-        self, *, template: str, wallet_type: WalletType,
-        variant: str | None = None, template_version: int | None = None,
+        self,
+        *,
+        template: str,
+        wallet_type: WalletType,
+        variant: str | None = None,
+        template_version: int | None = None,
         sample_data: dict[str, Any] | None = None,
     ) -> PreviewResponse: ...
 
@@ -176,10 +194,11 @@ by wallet:
 
 ```python
 class ApplePassResult(BaseModel):
-    content: bytes                         # raw .pkpass
-    template_version: int | None = None    # from X-Template-Version
-    variant: str | None = None             # from X-Variant
-    credential_set: str | None = None      # from X-Credential-Set
+    content: bytes  # raw .pkpass
+    template_version: int | None = None  # from X-Template-Version
+    variant: str | None = None  # from X-Variant
+    credential_set: str | None = None  # from X-Credential-Set
+
 
 class GooglePassResponse(BaseModel):
     pass_id: str
