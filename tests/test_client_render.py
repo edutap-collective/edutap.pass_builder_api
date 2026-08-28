@@ -40,7 +40,7 @@ async def test_create_google_pass_returns_model():
         result = await client.create_pass(
             pass_id="p-1",  # noqa: S106
             template="student-id",
-            wallet_type=WalletType.GOOGLE,
+            wallet_type=WalletType.GOOGLE_ST,
             person_uid="abc@lmu.de",
             request_id="req-1",
         )
@@ -66,7 +66,7 @@ async def test_create_apple_pass_returns_bytes_and_headers():
         result = await client.create_pass(
             pass_id="p-1",  # noqa: S106
             template="student-id",
-            wallet_type=WalletType.APPLE,
+            wallet_type=WalletType.APPLE_VAS,
             person_uid="abc@lmu.de",
         )
     assert isinstance(result, ApplePassResult)
@@ -96,7 +96,7 @@ async def test_preview_returns_model():
 
     async with _client(handler) as client:
         preview = await client.preview(
-            template="student-id", wallet_type=WalletType.GOOGLE
+            template="student-id", wallet_type=WalletType.GOOGLE_ST
         )
     assert preview.bound_fields == ["name"]
     assert preview.object_json == {"a": 1}
@@ -163,15 +163,15 @@ async def test_deactivate_pass_sends_no_person_uid():
         await client.deactivate_pass("p-1", template="student-id", variant="v2")
 
     assert "person_uid" not in seen
-    assert seen == {"template": "student-id", "wallet_type": "google", "variant": "v2"}
+    assert seen == {"template": "student-id", "wallet_type": "GOOGLE_ST", "variant": "v2"}
 
 
 @pytest.mark.anyio
-async def test_deactivate_pass_defaults_to_google():
-    """The only wallet type the server can serve, so the caller need not say it."""
+async def test_deactivate_pass_defaults_to_google_smart_tap():
+    """The only wallet type the server can withdraw, so the caller need not say it."""
 
     def handler(request: httpx.Request) -> httpx.Response:
-        assert json.loads(request.content)["wallet_type"] == "google"
+        assert json.loads(request.content)["wallet_type"] == "GOOGLE_ST"
         return httpx.Response(
             200,
             json={"pass_id": "p-1", "object_id": "iss.p-1", "state": "EXPIRED"},
@@ -203,7 +203,7 @@ async def test_deactivate_pass_surfaces_the_501_as_an_error():
     async with _client(handler) as client:
         with pytest.raises(PassBuilderError) as caught:
             await client.deactivate_pass(
-                "p-1", template="student-id", wallet_type=WalletType.APPLE
+                "p-1", template="student-id", wallet_type=WalletType.APPLE_VAS
             )
 
     assert caught.value.problem.status == 501

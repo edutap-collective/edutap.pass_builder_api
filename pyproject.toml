@@ -3,7 +3,9 @@ name = "edutap.pass_builder_api"
 version = "0.2.0"
 description = "Pythonic async client for the edutap.pass_builder REST service."
 readme = "README.md"
-requires-python = ">=3.12"
+# 3.13, nicht 3.12: `edutap.data_models` verlangt es. Der Dienst, gegen den dieser
+# Client spricht, ist im selben Zug mitgezogen.
+requires-python = ">=3.13"
 classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -13,6 +15,10 @@ license = { text = "EUPL 1.2" }
 authors = [{ name = "Alexander Loechel", email = "Alexander.Loechel@lmu.de" }]
 keywords = ["edutap", "wallet", "pass", "client"]
 dependencies = [
+    # The shared vocabulary. `WalletType` lives there, not here -- a copy of a shared
+    # enum is a second truth, and the copy that stood in `models.py` was on the coarse
+    # provider axis and could not express VAS versus Access.
+    "edutap.data_models>=0.3,<0.4",
     "httpx",
     "pydantic>=2",
     "pydantic-settings",

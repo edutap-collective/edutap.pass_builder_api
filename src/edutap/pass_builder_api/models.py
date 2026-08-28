@@ -1,17 +1,21 @@
 """Pydantic request/response models mirroring the pass_builder server schemas."""
 
-from enum import StrEnum
 from typing import Any
 
+from edutap.data_models.vocabulary import WalletType
 from pydantic import BaseModel
 
-
-class WalletType(StrEnum):
-    """Wallet platform. Server expects lowercase values."""
-
-    APPLE = "apple"
-    GOOGLE = "google"
-    SAMSUNG = "samsung"
+#: Re-exported, not redefined.
+#:
+#: `WalletType` comes from `edutap.data_models`, where the estate keeps its shared
+#: vocabulary. What stood here was a copy on the coarse provider axis -- `apple`,
+#: `google`, `samsung` -- and a copy of a shared vocabulary is a second truth. This
+#: one could not express VAS versus Access at all, so a caller needing Access had no
+#: way to say so and this client had no way to pass it on.
+#:
+#: The server refuses what it cannot build with `501 wallet_type_not_supported`. That
+#: check is NOT mirrored here: a client that reproduces the server's rules drifts from
+#: them, and the drift shows up as a request that never leaves.
 
 
 class CreatePassRequest(BaseModel):
