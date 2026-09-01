@@ -32,3 +32,15 @@ anyio.run(main)
 
 Configuration can also come from the environment (`PASS_BUILDER_BASE_URL`,
 `PASS_BUILDER_TOKEN`, `PASS_BUILDER_TIMEOUT`) via `PassBuilderSettings`.
+
+`PASS_BUILDER_BASE_URL` is the service's mount point **without** its business
+path: `client.API_PREFIX` (`/builder/v1`) is appended by every call, so a
+deployment behind a gateway sets
+`https://traefik-internal:8090/internal-api/wallet`.
+
+The token may also arrive as a mounted file. `PassBuilderSettings` declares
+`secrets_dir=/run/secrets`, and pydantic-settings looks for the field name with
+the prefix in front of it — `/run/secrets/PASS_BUILDER_token`, never
+`.../token`, and there is no `_FILE` convention. A token mounted under the wrong
+name is silently ignored, and a client with no token sends none: the mistake
+then shows up as a `401` far from its cause.
