@@ -44,3 +44,7 @@ the prefix in front of it — `/run/secrets/PASS_BUILDER_token`, never
 `.../token`, and there is no `_FILE` convention. A token mounted under the wrong
 name is silently ignored, and a client with no token sends none: the mistake
 then shows up as a `401` far from its cause.
+
+The case of the field half is not load-bearing — `PASS_BUILDER_TOKEN` is read
+just as well, pydantic-settings matching case-insensitively by default. The
+lower-case spelling is what the rest of the estate uses.

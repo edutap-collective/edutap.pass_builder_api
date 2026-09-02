@@ -22,6 +22,14 @@ than a line of deployment documentation:
 * **The file name carries the `env_prefix`**: `/run/secrets/PASS_BUILDER_token`,
   not `.../token`. A secret under the bare field name is silently ignored.
 
+  The case of the field half does not matter -- `PASS_BUILDER_TOKEN` is read
+  just as well, because pydantic-settings matches case-insensitively unless
+  `case_sensitive=True`. Measured against pydantic-settings 2.x rather than
+  assumed. The lower-case spelling is used here and in the deployment because
+  every sibling package spells it that way (`EDUTAP_DB_password`,
+  `IMAGE_SERVICE_DB_password`), and one odd one out invites somebody to
+  "correct" the others.
+
 A missing directory is harmless: pydantic-settings warns and falls back to the
 environment, so a development machine without `/run/secrets` is unaffected.
 """

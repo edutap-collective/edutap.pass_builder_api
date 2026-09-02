@@ -29,7 +29,8 @@ def test_a_secrets_dir_is_declared():
     its cause.
 
     pydantic-settings has no `_FILE` convention, and the file name it looks for
-    carries the prefix: `/run/secrets/PASS_BUILDER_token`.
+    carries the prefix: `/run/secrets/PASS_BUILDER_token`. The case of the
+    field half does not matter -- see `test_the_file_name_is_matched_case_insensitively`.
     """
     assert PassBuilderSettings.model_config["secrets_dir"] == SECRETS_DIR
 
@@ -43,3 +44,19 @@ def test_a_mounted_token_is_read(tmp_path, monkeypatch):
 
     assert settings.token is not None
     assert settings.token.get_secret_value() == "from-a-file"
+
+
+def test_the_file_name_is_matched_case_insensitively(tmp_path):
+    """`PASS_BUILDER_TOKEN` is read as readily as `PASS_BUILDER_token`.
+
+    Measured, because it was asked: pydantic-settings matches
+    case-insensitively unless `case_sensitive=True`, so neither spelling is a
+    deployment risk. What IS a risk is the prefix -- a file under the bare
+    field name is ignored in every case, which the test above pins down.
+    """
+    (tmp_path / "PASS_BUILDER_TOKEN").write_text("upper-case-file\n")
+
+    settings = PassBuilderSettings(_env_file=None, _secrets_dir=str(tmp_path))
+
+    assert settings.token is not None
+    assert settings.token.get_secret_value() == "upper-case-file"
